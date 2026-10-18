@@ -91,11 +91,11 @@ const I = {
   coin:   '<circle cx="12" cy="12" r="9"/><path d="M14.5 9.5c-.5-1-1.5-1.5-2.5-1.5-1.5 0-2.5.8-2.5 2s1 1.7 2.5 2 2.5.8 2.5 2-1 2-2.5 2c-1.1 0-2-.5-2.5-1.5M12 6.5V8M12 16v1.5"/>',
   flag:   '<path d="M5 21V4M5 4h11l-2 4 2 4H5"/>',
   arrow:  '<path d="M7 17 17 7M8 7h9v9"/>',
-  sun:    '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
-  moon:   '<path d="M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5z"/>',
   alert:  '<path d="M12 3 2 20h20z"/><path d="M12 10v4M12 17v.5"/>',
   back:   '<path d="m15 18-6-6 6-6"/>',
   right:  '<path d="m9 6 6 6-6 6"/>',
+  menu:   '<path d="M4 6h16M4 12h16M4 18h16"/>',
+  close:  '<path d="M18 6 6 18M6 6l12 12"/>',
 };
 const ic = (n, s = 20) =>
   `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${I[n]}</svg>`;
@@ -114,6 +114,12 @@ const NAV = [
 ];
 
 // ── Drawer ────────────────────────────────────────────────────────────────────
+function closeDr() {
+  $('#dr').classList.remove('on');
+  const ov = $('#dr-overlay');
+  if (ov) ov.classList.remove('on');
+}
+
 function open(k) {
   const f = F[k];
   if (!f) return;
@@ -124,6 +130,8 @@ function open(k) {
     `<h4>Kapan bisa meleset</h4><p>${f.w}</p>` +
     `<h4>Yang boleh diputuskan dari angka ini</h4><p>${f.u}</p>`;
   $('#dr').classList.add('on');
+  const ov = $('#dr-overlay');
+  if (ov) ov.classList.add('on');
 }
 
 // ── Component helpers ─────────────────────────────────────────────────────────
@@ -420,20 +428,55 @@ function labels() {
   });
 }
 
+function closeNav() {
+  const m = $('#mob-nav');
+  if (m) m.classList.remove('open');
+  const ov = $('#dr-overlay');
+  if (ov && !$('#dr').classList.contains('on')) ov.classList.remove('on');
+}
+
+function openNav() {
+  closeDr();
+  const m = $('#mob-nav');
+  if (m) m.classList.add('open');
+  const ov = $('#dr-overlay');
+  if (ov) ov.classList.add('on');
+}
+
 // ── Render ────────────────────────────────────────────────────────────────────
 function render() {
-  const dk = document.documentElement.dataset.theme == 'dark' ||
-    (!document.documentElement.dataset.theme && matchMedia('(prefers-color-scheme: dark)').matches);
-
   $('#app').innerHTML =
-    `<header class="tb"><div class="lg">✱</div><div><small>${V == 0 ? 'Selamat pagi, Bu Direktur' : 'Project Meridian'}</small><h1>${TT[V]}</h1></div>` +
-    `<div class="tr"><span class="b d">Contoh data, bukan data perusahaan</span>` +
-    `<div class="pill">` +
-    `<button data-th="light" class="${dk ? '' : 'on'}" aria-label="Tema terang">${ic('sun', 18)}</button>` +
-    `<button data-th="dark" class="${dk ? 'on' : ''}" aria-label="Tema gelap">${ic('moon', 18)}</button>` +
-    `</div><div class="av">DH</div></div></header>` +
+    `<header class="tb">` +
+    `<button class="burger-btn" id="btn-burger" aria-label="Buka navigasi menu">${ic('menu', 20)}</button>` +
+    `<div class="lg">✱</div>` +
+    `<div class="tb-text">` +
+    `<small>${V == 0 ? 'Selamat pagi, Bu Direktur' : 'Project Meridian'}</small>` +
+    `<h1>${TT[V]}</h1>` +
+    `</div>` +
+    `<div class="tr">` +
+    `<span class="b d" style="display:none" id="demo-badge">Contoh data</span>` +
+    `<div class="av" title="Pengguna aktif">DH</div>` +
+    `</div>` +
+    `</header>` +
+    `<!-- Mobile Navigation Drawer -->` +
+    `<aside id="mob-nav" class="mob-drawer">` +
+    `<div class="mob-drawer-header">` +
+    `<div style="display:flex;align-items:center;gap:10px;">` +
+    `<div class="lg" style="width:34px;height:34px;font-size:16px;">✱</div>` +
+    `<div><b style="font-size:15px;display:block;">Menu Meridian</b><small class="fn" style="font-size:11px;">Konsol Kapabilitas</small></div>` +
+    `</div>` +
+    `<button class="ar" id="btn-close-nav" aria-label="Tutup menu">${ic('close', 18)}</button>` +
+    `</div>` +
+    `<div class="mob-drawer-body">` +
+    NAV.map((n, i) =>
+      `<button class="mob-nav-item ${i == V ? 'active' : ''}" data-go="${i}">` +
+      `${ic(n[1], 20)}<span>${n[0]}</span>` +
+      `</button>`
+    ).join('') +
+    `</div>` +
+    `</aside>` +
     `<nav class="rail">${NAV.map((n, i) =>
-      `<button data-go="${i}" title="${n[0]}" aria-label="${n[0]}" ${i == V ? 'aria-current="true"' : ''}>${ic(n[1])}<span>${n[2]}</span></button>`
+      `<button data-go="${i}" title="${n[0]}" aria-label="${n[0]}" ${i == V ? 'aria-current="true"' : ''}>${ic(n[1], 20)}<span>${n[2]}</span></button>`
     ).join('')}</nav>` +
     `<main class="pg">${[v0, v1, v2, v3, v4, v5, v6][V]()}</main>`;
 
@@ -450,9 +493,29 @@ function render() {
 
 // ── Event delegation ──────────────────────────────────────────────────────────
 document.addEventListener('click', e => {
+  // Burger button toggle
+  if (e.target.closest('#btn-burger')) {
+    openNav();
+    return;
+  }
+  // Close burger drawer button
+  if (e.target.closest('#btn-close-nav')) {
+    closeNav();
+    return;
+  }
+  // Close drawer and nav when clicking overlay
+  if (e.target.id === 'dr-overlay') {
+    closeDr();
+    closeNav();
+    return;
+  }
+
   const t = e.target.closest('[data-k],[data-go],[data-g],[data-p],[data-x],[data-th],[data-back],[data-ls]');
   if (!t) {
-    if (!e.target.closest('#dr')) $('#dr').classList.remove('on');
+    if (!e.target.closest('#dr') && !e.target.closest('#mob-nav')) {
+      closeDr();
+      closeNav();
+    }
     return;
   }
   const d = t.dataset;
@@ -463,9 +526,8 @@ document.addEventListener('click', e => {
     L.querySelectorAll('[data-ls]').forEach(b => b.setAttribute('aria-pressed', b.dataset.ls == LN));
     return;
   }
-  if (d.x !== undefined) return $('#dr').classList.remove('on');
+  if (d.x !== undefined) return closeDr();
   if (d.k) return open(d.k);
-  if (d.th) { document.documentElement.dataset.theme = d.th; return render(); }
   if (d.back !== undefined) { P = null; return render(); }
   if (d.p) { P = d.p; scrollTo(0, 0); return render(); }
   if (d.g) {
@@ -476,7 +538,8 @@ document.addEventListener('click', e => {
   }
   V = +d.go;
   P = null;
-  $('#dr').classList.remove('on');
+  closeDr();
+  closeNav();
   render();
   scrollTo(0, 0);
 });
